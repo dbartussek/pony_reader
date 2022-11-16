@@ -23,10 +23,22 @@ fn pretty() -> PrettyConfig {
     pretty
 }
 
+fn read_rom() -> Vec<u8> {
+    let mut rom = std::fs::read("pony/Pony Friends GER.nds").unwrap();
+    // let mut rom = std::fs::read("pony/TinyFB.nds").unwrap();
+
+    let min_len = std::mem::size_of::<CartridgeHeader>();
+    if rom.len() < min_len {
+        rom.resize(min_len, 0);
+    }
+
+    rom
+}
+
 fn main() {
     let _ = std::fs::create_dir_all("out");
+    let rom = read_rom();
 
-    let rom = std::fs::read("pony/Pony Friends GER.nds").unwrap();
     let (header, _) =
         LayoutVerified::<_, CartridgeHeader>::new_from_prefix(rom.as_slice()).unwrap();
     std::fs::write(
@@ -34,6 +46,11 @@ fn main() {
         ron::ser::to_string_pretty(&*header, pretty()).unwrap(),
     )
     .unwrap();
+
+    let arm9_base = header.arm9.rom_offset.get() as usize;
+    let arm9_length = header.arm9.size.get() as usize;
+    let arm9 = rom.get(arm9_base..(arm9_base + arm9_length)).unwrap();
+    std::fs::write("out/arm9.bin", arm9).unwrap();
 
     let file_name_table = FileNameTable::read(&rom, header.fnt.offset.get() as usize).unwrap();
 
