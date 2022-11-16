@@ -1,0 +1,15 @@
+[package]
+name = "pony_reader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+byte-unit = "4.0.17"
+byteorder = "1.4.3"
+derivative = "2.2.0"
+eyre = "0.6.8"
+hex = "0.4.3"
+itertools = "0.10.5"
+ron = { git = "https://github.com/dbartussek/ron.git" }
+serde = { version = "1.0.147", features = ["derive"] }
+zerocopy = "0.6.1"
