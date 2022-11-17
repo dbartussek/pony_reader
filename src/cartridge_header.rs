@@ -1,12 +1,17 @@
-use crate::byte_types::{
-    embedded_string::EmbeddedString,
-    int::{U16, U32},
+use crate::{
+    byte_types::{
+        embedded_string::EmbeddedString,
+        int::{U16, U32},
+    },
+    file::{
+        file_allocation_table::FileAllocationTableEntry, file_name_table::FileNameTable, Files,
+    },
 };
 use byte_unit::{Byte, KIBIBYTE};
 use byteorder::LittleEndian;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use zerocopy::{AsBytes, FromBytes, Unaligned};
+use zerocopy::{AsBytes, FromBytes, LayoutVerified, Unaligned};
 
 #[repr(C)]
 #[derive(Copy, Clone, FromBytes, AsBytes, Unaligned, Derivative, Serialize, Deserialize)]
@@ -105,6 +110,30 @@ pub struct OffsetAndSize {
 impl CartridgeHeader {
     pub fn device_capacity(&self) -> Byte {
         Byte::from_bytes((128 << self.device_capacity_raw) * KIBIBYTE)
+    }
+
+    pub fn read_fnt(&self, rom: &[u8]) -> Option<FileNameTable> {
+        let base = self.fnt.offset.get() as usize;
+        let size = self.fnt.size.get();
+        if size == 0 {
+            return Some(FileNameTable {
+                main_table: vec![],
+                sub_tables: vec![],
+            });
+        }
+
+        FileNameTable::read(rom, base)
+    }
+
+    pub fn read_fat<'lt>(
+        &self,
+        rom: &'lt [u8],
+    ) -> Option<LayoutVerified<&'lt [u8], [FileAllocationTableEntry]>> {
+        FileAllocationTableEntry::read_fat(self, &rom)
+    }
+
+    pub fn read_files<'lt>(&self, rom: &'lt [u8]) -> Option<Files<'lt>> {
+        Files::read(self, rom)
     }
 }
 

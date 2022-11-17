@@ -18,6 +18,12 @@ impl FileAllocationTableEntry {
     ) -> Option<LayoutVerified<&'lt [u8], [FileAllocationTableEntry]>> {
         let base = header.fat.offset.get() as usize;
         let size = header.fat.size.get() as usize;
+
+        static DUMMY: &[u8] = &[];
+        if size == 0 {
+            return LayoutVerified::new_slice(DUMMY);
+        }
+
         let fat_raw = rom.get(base..(base + size))?;
 
         let fat = LayoutVerified::<_, [FileAllocationTableEntry]>::new_slice(fat_raw)?;

@@ -159,6 +159,9 @@ impl FileNameTable {
     where
         F: FnMut(&[&DynamicEmbeddedString<127>], u16),
     {
+        if self.main_table.is_empty() {
+            return;
+        }
         self.walk_directory(&mut function, 0, &mut vec![])
     }
 }
